@@ -383,8 +383,8 @@ Section SAFE_XRUTT_RUTT.
 Context {E1 E2 : Type -> Type}.
 Context (is_error : forall T, E1 T -> bool).
 
-Definition errcutoff T (e : E1 T) := ~~(is_error e).
-Definition nocutoff T (e : E2 T) := true.
+Definition errcutoff T (e : E1 T) := is_error e.
+Definition nocutoff T (e : E2 T) := false.
 
 Lemma safe_xrutt_rutt {R1 R2 : Type}
   (REv : prerel E1 E2)
@@ -406,9 +406,15 @@ Proof.
     constructor => // r1 r2 /hAns hxrutt.
     have [hnerr /(_ r1){}hsafe]:= safe_inv_Vis hsafe.
     by pclearbot; right; eauto.
-  + move=> T e1 k1 ot2 + hsafe.
+  + move=> T e1 k1 ot2 + hsafe.    
     have [hnerr _]:= safe_inv_Vis hsafe.
-    by rewrite /errcutoff hnerr.
+    rewrite /errcutoff.
+    move => H.    
+    have: (is_error e1 = false).
+    { simpl in hnerr. red in hnerr.
+      rewrite /negb in hnerr.
+      rewrite H in hnerr. auto with *. }
+    eauto with *.
   + move=> t1 ot2 _ hrec.
     by rewrite -safe_Tau {1}(itree_eta t1) => /hrec; apply Rutt.EqTauL.
   by move=> ot1 t2 _ hrec /hrec; apply Rutt.EqTauR.

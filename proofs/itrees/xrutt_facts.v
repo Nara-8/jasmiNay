@@ -418,7 +418,7 @@ Definition EE_MR {E: Type -> Type}
   (EE: forall X, E X -> bool) (D: Type -> Type) :
   forall X, (D +' E) X -> bool :=
   fun X m => match m with
-             | inl1 _ => true
+             | inl1 _ => false
              | inr1 e => EE X e end.             
 
 Section XRuttMrec.
@@ -622,18 +622,20 @@ Proof.
   hinduction h before CIH; intros; subst.
   + eapply EqRet; auto.
   + econstructor; eauto with paco itree. right. eapply CIH; eauto. red in H.
-    pclearbot; auto.
+    pclearbot; auto. 
   + remember (EE1' A e1) as Er1.
     remember (EE2' B e2) as Er2.
     destruct Er1.
-    destruct Er2.
-    eapply EqVis; eauto; intros.
-    right. eapply CIH; eauto.
-    eapply hRAns in H3; eauto.
-    specialize (H2 a b H3).
-    pclearbot; auto.
-    eapply EqCutR; auto.
-    eapply EqCutL; auto.
+    * destruct Er2.
+      -- eapply EqCutR; auto.
+      -- eapply EqCutL; auto.
+    * destruct Er2.
+      -- eapply EqCutR; auto.
+      -- eapply EqVis; eauto; intros.
+         right. eapply CIH; eauto.
+         eapply hRAns in H3; eauto.
+         specialize (H2 a b H3).
+         pclearbot; auto.
   + eapply EqCutL; auto. 
   + eapply EqCutR; auto.  
   + eapply EqTauL; eauto.  
@@ -704,7 +706,7 @@ Definition pocompose {E1 E2 E3 : Type -> Type}
     exists2 t2, post T1 T2 e1 t1 e2 t2 & post' T2 T3 e2 t2 e3 t3.
 
 
-Definition NoCut_ {E: Type -> Type} {T: Type} (e : E T) := true. 
+Definition NoCut_ {E: Type -> Type} {T: Type} (e : E T) := false. 
 
 Lemma xrutt_trans {E1 E2 E3: Type -> Type} {R1 R2 R3 : Type}
   (EE1: forall X, E1 X -> bool)

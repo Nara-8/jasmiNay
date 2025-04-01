@@ -29,18 +29,16 @@ From ITree Require Import
 
 From Paco Require Import paco.
 
-Require Import List.
-
 Import Monads.
 Import MonadNotation.
 Local Open Scope monad_scope.
 
 (** Auxiliary notation *)
 
-Notation IsCut EE e := (EE e = false).
-Notation IsEff EE e := (EE e = true).
-Notation IsCut_ EE A e := (EE A e = false).
-Notation IsEff_ EE A e := (EE A e = true).
+Notation IsCut EE e := (EE e = true).
+Notation IsEff EE e := (EE e = false).
+Notation IsCut_ EE A e := (EE A e = true).
+Notation IsEff_ EE A e := (EE A e = false).
 
 Notation DoCutoffF EE t := 
  (exists T (e: _ T) k, IsCut EE e /\ t = VisF e k).
@@ -378,11 +376,11 @@ Proof.
   remember (EE1 e1) as ee1.
   remember (EE2 e2) as ee2.
   destruct ee1; destruct ee2; intros He Hk.
+  { eapply xrutt_CutL; eauto. }
+  { eapply xrutt_CutL; eauto. }
+  { eapply xrutt_CutR; eauto. }
   { pstep; constructor; auto.
     intros; left. apply Hk; auto. }
-  { eapply xrutt_CutR; eauto. }
-  { eapply xrutt_CutL; eauto. }
-  { eapply xrutt_CutL; eauto. }
 Qed.
 
 Lemma xrutt_inv_Vis_l {U1} (e1: E1 U1) k1 t2:
