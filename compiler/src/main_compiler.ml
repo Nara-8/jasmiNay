@@ -242,7 +242,7 @@ let main () =
           Format.fprintf fmt "%a%!" Arch.pp_asm_v2 asm);
           if !debug then Format.eprintf "assembly listing written@."
       end else if List.mem Compiler.Assembly !print_list then
-          Format.printf "%a%!" Arch.pp_asm asm
+          Format.printf "%a%!" Arch.pp_asm_v2 asm
     end
   with
   | Utils.HiError e ->

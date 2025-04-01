@@ -56,20 +56,6 @@ let pp_asm_element fmt asm_element =
 let pp_asm fmt asm = 
   List.iter (pp_asm_element fmt) asm
 
-let mangle x = "_" ^ x
-let escape = PrintCommon.escape
-
-let hash_to_string (to_string : 'a -> string) =
-  let tbl = Hashtbl.create 17 in
-  fun r ->
-      try Hashtbl.find tbl r
-      with Not_found ->
-        let s = to_string r in
-        Hashtbl.add tbl r s;
-        s
-
-let string_of_register arch reg = hash_to_string arch.toS_r.to_string reg
-
 let string_of_glob occurrences x =
   Hash.modify_def (-1) x.v_name Stdlib.Int.succ occurrences;
   let count =  Hash.find occurrences x.v_name in
