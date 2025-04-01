@@ -1,6 +1,11 @@
 
-Require Import psem psem_facts psem_of_sem_proof
+Require Import psem_of_sem_proof
                it_sems_core relational_logic.
+
+Require Import array type expr gen_map warray_ sem_type sem_op_typed
+               values varmap expr_facts low_memory syscall_sem psem_defs.
+Require Import flag_combination sem_params.
+
 Import Utf8.
 From mathcomp Require Import ssreflect ssrfun ssrbool.
 

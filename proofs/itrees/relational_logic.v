@@ -532,7 +532,7 @@ Proof.
   by move=> > <-; apply hx.
 Qed.
 
-(* FIXME: move this *)
+(* FIXME: move this (depends on psem.v) *)
 Lemma wrequiv_exec_sopn o :
   wrequiv (Forall2 value_uincl) (exec_sopn o) (exec_sopn o) (Forall2 value_uincl).
 Proof. move=> vs1 vs2 vs1'; apply vuincl_exec_opn. Qed.
