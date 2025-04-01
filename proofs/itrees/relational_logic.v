@@ -292,7 +292,7 @@ Lemma wkequiv_io_weaken {I1 I2 O1 O2} (P P' : rel I1 I2) (Q Q' : rel_io I1 I2 O1
 Proof.
   move=> hpreI hpostI hP'P hQQ' heqv i1 i2 hP'.
   have := heqv _ _ (hP'P _ _ hP').
-  apply xrutt_weaken1 => //.
+  apply xrutt_weaken_v2 => //.
   + move=> T1 T2 e1 e2; rewrite /RPreInv.
     by case => {}T1 {}T2 {}e1 {}e2 ?; constructor; auto.
   + move=> T1 T2 e1 t1 e2 t2 _ _; rewrite /RPreInv /RPostInv => h1 h2.
