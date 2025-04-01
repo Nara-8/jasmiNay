@@ -4,7 +4,7 @@ open Utils
 open Prog
 open Var0
 open Asm_utils
-open Asm_printer
+open PrintASM
 
 let hash_to_string (to_string : 'a -> string) =
   let tbl = Hashtbl.create 17 in
@@ -66,3 +66,13 @@ let format_glob_data globs names =
             | exception Not_found -> [ b ]
             | x, _ -> [ Label (string_of_glob occurrences x); b ])
           globs)
+
+
+let pp_asm_arg arch arch_name pp_reg_address_aux  imm_pre (arg: ('a,Arch_utils.empty,Arch_utils.empty,'d,'e) asm_arg) =
+  match arg with
+  | Condt _ -> None
+  | Imm (ws, w) -> Some (pp_imm imm_pre (Conv.z_of_word ws w))
+  | Reg r -> Some (pp_register arch r)
+  | Regx _ -> .
+  | Addr addr -> Some (pp_address arch arch_name pp_reg_address_aux addr)
+  | XReg _ -> .

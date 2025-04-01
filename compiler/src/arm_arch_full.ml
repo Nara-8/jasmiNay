@@ -115,7 +115,5 @@ module Arm (Lowering_params : Arm_input) : Arch_full.Core_arch = struct
 
   let pp_asm = Pp_arm_m4.print_prog
   
-  let pp_asm_v2 = Pp_arm_m4_v2.print_prog
-
   let callstyle = Arch_full.ByReg { call = Some LR; return = false }
 end
