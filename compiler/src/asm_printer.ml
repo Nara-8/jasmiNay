@@ -55,26 +55,3 @@ let pp_asm_element fmt asm_element =
   
 let pp_asm fmt asm = 
   List.iter (pp_asm_element fmt) asm
-
-let string_of_glob occurrences x =
-  Hash.modify_def (-1) x.v_name Stdlib.Int.succ occurrences;
-  let count =  Hash.find occurrences x.v_name in
-  (* Adding the number of occurrences to the label to avoid names conflict *)
-  let suffix = if count > 0 then Format.asprintf "$%d" count else "" in
-  Format.asprintf "G$%s%s" (escape x.v_name) suffix
-
-
-let format_glob_data globs names = 
-    (* Creating a Hashtable to count occurrences of a label name*)
-    let occurrences = Hash.create 42 in
-    let names =
-      List.map (fun ((x, _), p) -> (Conv.var_of_cvar x, Conv.z_of_cz p)) names
-    in
-    List.flatten
-      (List.mapi
-         (fun i b ->
-           let b = Byte (Z.to_string (Conv.z_of_int8 b)) in
-           match List.find (fun (_, p) -> Z.equal (Z.of_int i) p) names with
-           | exception Not_found -> [ b ]
-           | x, _ -> [ Label (string_of_glob occurrences x); b ])
-         globs)

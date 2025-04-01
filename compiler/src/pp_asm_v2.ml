@@ -479,7 +479,7 @@ module X86AsmTranslate (AsmSyntax: X86AsmSyntax) = struct
       ]
 
   let asm_data_segment_body globs names =
-    let datas = Asm_printer.format_glob_data globs names in
+    let datas = Risc_utils.format_glob_data globs names in
     List.fold_left (fun acc data -> 
       acc @ [(data)]
     ) [] datas
