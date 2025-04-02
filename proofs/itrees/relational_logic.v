@@ -2,9 +2,8 @@ From Coq Require Import
   Program
   Setoid
   Morphisms
-  RelationClasses.
-
-From ExtLib Require Import Data.List.
+  RelationClasses
+  List.
 
 From ITree Require Import
   ITree
@@ -24,9 +23,9 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-From Jasmin Require Import xrutt xrutt_facts.
-From Jasmin Require Import expr psem_defs psem oseq compiler_util.
-From Jasmin Require Import it_sems_core core_logics hoare_logic.
+Require Import xrutt xrutt_facts.
+Require Import expr psem_defs psem oseq compiler_util.
+Require Import it_sems_core core_logics hoare_logic.
 
 Definition rel (I1 I2 : Type) := I1 -> I2 -> Prop.
 
