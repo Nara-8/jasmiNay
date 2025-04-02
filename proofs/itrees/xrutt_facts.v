@@ -607,7 +607,7 @@ Lemma xrutt_weaken (E1 E2: Type -> Type) (R1 R2 : Type)
     REv T1 T2 e1 e2 -> REv' T1 T2 e1 e2) -> 
 
   (forall T1 T2 e1 t1 e2 t2 ,
-    IsEff_ EE1 _ e1 -> IsEff_ EE2 _ e2 ->
+    IsNoCut_ EE1 _ e1 -> IsNoCut_ EE2 _ e2 ->
     REv T1 T2 e1 e2 -> RAns' T1 T2 e1 t1 e2 t2 -> RAns T1 T2 e1 t1 e2 t2) -> 
 
   (forall r1 r2, RR r1 r2 -> RR' r1 r2) ->
@@ -680,7 +680,7 @@ Lemma xrutt_weaken_v2 {E1 E2: Type -> Type} {O1 O2 : Type}
       REv T1 T2 e1 e2 -> REv' T1 T2 e1 e2) ->
   
   (forall T1 T2 e1 t1 e2 t2 ,
-      IsEff_ EE1 _ e1 -> IsEff_ EE2 _ e2 ->
+      IsNoCut_ EE1 _ e1 -> IsNoCut_ EE2 _ e2 ->
       REv T1 T2 e1 e2 -> RAns' T1 T2 e1 t1 e2 t2 -> RAns T1 T2 e1 t1 e2 t2) ->
   
   (forall o1 o2, RR o1 o2 -> RR' o1 o2) ->
