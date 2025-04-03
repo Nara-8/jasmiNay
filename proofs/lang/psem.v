@@ -1,4 +1,4 @@
- (* * Jasmin semantics with “partial values”. *)
+(* * Jasmin semantics with “partial values”. *)
 
 (* ** Imports and settings *)
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssralg.
@@ -597,7 +597,10 @@ Section EQ_SEM_E.
     apply foldM_ext => // ??.
     apply (bindP (R := fun s1 s2 => evm s1 = evm s2 /\ emem s1 = emem s2)).
     + by case: s1 s2 hmem hvm => ???? [] > /= -> ->; rewrite /write_var /=; case: set_var.
-    by move=> m1 m2 [] h1 h2; rewrite (hb m1 m2).
+      by move=> m1 m2 [] h1 h2; rewrite (hb m1 m2).
+    - by move=> ??? ->.
+    - by move=> ?? H1 ? H2 s1 s2 hvm hmem; rewrite (H1 s1 s2) // hvm (H2 s1 s2) // hmem.
+    - by move=> ? H1 ? H2 s1 s2 hvm hmem; rewrite (H1 s1 s2) // hmem (H2 s1 s2) // hmem.
   Qed.
 
   Lemma sem_pexpr_vm_mem s1 s2 e :
@@ -622,6 +625,7 @@ End EQ_SEM_E.
 
 Section EXEC_ASM.
 
+  
 Context
   {asm_op syscall_state : Type}
   {ep : EstateParams syscall_state}
@@ -639,7 +643,7 @@ Lemma sopn_tinP o vs vs' : exec_sopn o vs = ok vs' ->
   all2 subtype (sopn_tin o) (List.map type_of_val vs).
 Proof.
   rewrite /exec_sopn /sopn_tin /sopn_sem.
-  case (get_instr_desc o) => /= _ tin _ tout _ _ semi _ _.
+  case (get_instr_desc o) => /= _ tin _ tout _ _ semi _ _ _.
   t_xrbindP => p hp _.
   elim: tin vs semi hp => /= [ | t tin hrec] [ | v vs] // semi.
   by t_xrbindP => sv /= /of_val_subtype -> /hrec.
@@ -1290,14 +1294,14 @@ Section READ_E_ES_EQ_ON.
       + by apply: (eq_onI _ Heq); rewrite /= read_esE; SvD.fsetdec.
       apply bind_eq; first by apply: rec Heq'.
       by move=> v; rewrite (ih _ _ _ Heq).
-    - by move=> /= x s1 vm' s /get_gvar_eq_on -> //; SvD.fsetdec.
+    - move=> /= x s1 vm' s /get_gvar_eq_on -> //; SvD.fsetdec.
     - move=> /= al aa sz x e He s1 vm' s Heq; rewrite (He _ _ _ Heq) => {He}.
       rewrite (on_arr_gvar_eq_on (s' := with_vm s1 vm') _ _ _ Heq) ?read_eE //.
       by SvD.fsetdec.
     - move=> /= aa sz len x e He s1 vm' s Heq; rewrite (He _ _ _ Heq) => {He}.
       rewrite (on_arr_gvar_eq_on (s' := with_vm s1 vm') _ _ _ Heq) ?read_eE //.
       by SvD.fsetdec.
-    - by move=> /= al sz x e He s1 vm' s Hvm; rewrite (get_var_eq_on _ _ Hvm) ?(He _ _ _ Hvm) // read_eE;SvD.fsetdec.
+    - move=> /= al sz x e He s1 vm' s Hvm; rewrite (get_var_eq_on _ _ Hvm) ?(He _ _ _ Hvm) // read_eE ;SvD.fsetdec.
     - by move=> /= op e He s1 vm' s /He ->.
     - move => /= op e1 He1 e2 He2 s1 vm' s Heq; rewrite (He1 _ _ _ Heq) (He2 _ vm' s) //.
       by move=> z Hin; apply Heq; rewrite read_eE; SvD.fsetdec.
@@ -1324,7 +1328,18 @@ Section READ_E_ES_EQ_ON.
     rewrite (hb _ vm'.[x<-i] s); first by rewrite !with_vm_idem.
     rewrite read_eE => z hz; rewrite !Vm.setP; case: eqP => // ?.
     apply heq; SvD.fsetdec.
+    - rewrite /= /eq_on /vm_rel => x s1 vm' s /(_ x) Heq.
+      have H := (SvP.MP.FM.add_1 s Logic.eq_refl).
+      by apply Heq in H; rewrite H. 
+    - move=> /= x e1 He1 e2 He2 s1 vm' s Heq.
+      rewrite (He1 _ _ _ Heq) (He2 _ vm' s) //.
+      rewrite (get_var_eq_on _ _ Heq) ?(He1 _ _ _ Heq) ?(He2 _ _ _ Heq) //.
+      rewrite !read_eE; SvD.fsetdec.
+      rewrite read_eE => z Hin; apply Heq; rewrite !read_eE; SvD.fsetdec.
+    - move=> /= e1 He1 e2 He2 s1 vm' s Heq; rewrite (He1 _ _ _ Heq) (He2 _ vm' s) //.
+      move=> z Hin; apply Heq; rewrite read_eE; SvD.fsetdec.      
 Qed.
+  
 
 End READ_E_ES_EQ_ON.
 
@@ -1391,6 +1406,9 @@ Proof.
   apply (bindP (R := fun s1 s2 => evm s1 = evm s2)).
   + by rewrite /write_var heq; case: set_var.
   by move=> m1 m2 heq'; rewrite (hb _ _ heq' hnb).
+  by move=> ??? ->.
+  by move=> ?? h1 ? h2 ?? eq; rewrite negb_or=> /andP[] mem1 mem2;
+                rewrite (h1 _ _ eq mem1) (h2 _ _ eq mem2) eq.  
 Qed.
 
 End UseMem.
@@ -1668,7 +1686,120 @@ Proof.
   by move=> /(write_var_uincl Hvm Hv) []vm2 -> Hvm2 /(Hrec _ _ _ _ Hvm2 Hvs).
 Qed.
 
-(* --------------------------------------------------------- *)
+(* ---------- eq_on ---------- *)
+
+Lemma sem_pexpr_eq_on_pair wdb gd :
+  (∀ e s1 vm2 v1,
+      s1.(evm) =[read_e e] vm2 →
+      sem_pexpr wdb gd s1 e = ok v1 →
+      exists2 v2, sem_pexpr wdb gd (with_vm s1 vm2) e = ok v2 & (@eq value) v1 v2
+  ) ∧ (∀ es s1 vm2 vs1,
+          s1.(evm) =[read_es es] vm2 →
+          sem_pexprs wdb gd s1 es = ok vs1 →
+          exists2 vs2,
+         sem_pexprs wdb gd (with_vm s1 vm2) es = ok vs2 &
+           List.Forall2 (@eq value) vs1 vs2
+      ).
+Proof.
+Admitted.
+
+Lemma sem_pexpr_eq_on wdb gd s1 vm2 e v1 :
+  s1.(evm) =[read_e e] vm2 →
+  sem_pexpr wdb gd s1 e = ok v1 →
+  exists2 v2, sem_pexpr wdb gd (with_vm s1 vm2) e = ok v2 & (@eq value) v1 v2.
+Proof. exact: (proj1 (sem_pexpr_eq_on_pair wdb gd)). Qed.
+
+Corollary sem_pexpr_eq wdb gd s1 vm2 e v1 :
+  vm_eq s1.(evm) vm2 → (*Notation =1 not working*)
+  sem_pexpr wdb gd s1 e = ok v1 →
+  exists2 v2, sem_pexpr wdb gd (with_vm s1 vm2) e = ok v2 & (@eq value) v1 v2.
+Proof. move => /(vm_eq_eq_on (dom:=read_e e)); exact: sem_pexpr_eq_on. Qed.
+
+Lemma sem_pexprs_eq_on wdb gd s1 vm2 es vs1 :
+  s1.(evm) =[read_es es] vm2 →
+  sem_pexprs wdb gd s1 es = ok vs1 →
+  exists2 vs2, sem_pexprs wdb gd (with_vm s1 vm2) es = ok vs2 &
+              List.Forall2 (@eq value) vs1 vs2.
+Proof. exact: (proj2 (sem_pexpr_eq_on_pair wdb gd)). Qed.
+
+Corollary sem_pexprs_eq wdb gd s1 vm2 es vs1 :
+  vm_eq s1.(evm) vm2 →
+  sem_pexprs wdb gd s1 es = ok vs1 →
+  exists2 vs2, sem_pexprs wdb gd (with_vm s1 vm2) es = ok vs2 &
+              List.Forall2 (@eq value) vs1 vs2.
+Proof. move => /(vm_eq_eq_on (dom:=read_es es)); exact: sem_pexprs_eq_on. Qed.
+
+Lemma sem_pexpr_eq_on' wdb gd s vm' vm scs m ass e v1 :
+  vm =[read_e_rec s e] vm' ->
+  sem_pexpr wdb gd {| escs := scs; emem := m; evm := vm; eassert := ass |} e = ok v1 ->
+  exists2 v2 : value,
+               sem_pexpr wdb gd {| escs := scs; emem := m; evm := vm'; eassert := ass |} e = ok v2 & (@eq value) v1 v2.
+Proof.
+  rewrite read_eE => /(eq_onI (SvP.MP.union_subset_1 _)) h1 h2.
+  by have /(_ _ h1) := sem_pexpr_eq_on _ h2.
+Qed.
+
+Lemma sem_pexprs_eq_on' wdb gd es s scs m ass vm vm' vs1 :
+  vm =[read_es_rec s es] vm'->
+  sem_pexprs wdb gd (Estate scs m vm ass) es = ok vs1 ->
+  exists2 vs2,sem_pexprs wdb gd (Estate scs m vm' ass) es = ok vs2 &
+              List.Forall2 (@eq value) vs1 vs2.
+Proof.
+  rewrite read_esE => /(eq_onI (SvP.MP.union_subset_1 _)) h1 h2.
+  by have /(_ _ h1) := sem_pexprs_eq_on _ h2.
+Qed.
+
+Lemma eq_write_none wdb s2 v1 v2 s s' t:
+  (@eq value) v1 v2 ->
+  write_none wdb s t v1 = ok s' ->
+  write_none wdb s2 t v2 = ok s2.
+Proof.
+  move=> hu /write_noneP [_ htr hdb];rewrite /write_none.
+  by subst; rewrite htr hdb.
+Qed.
+
+Lemma write_eq_on wdb gd s1 s2 vm1 r v1 v2:
+  s1.(evm) =[read_rv r] vm1 ->
+  (@eq value) v1 v2 ->
+  write_lval wdb gd r v1 s1 = ok s2 ->
+  exists2 vm2,
+    write_lval wdb gd r v2 (with_vm s1 vm1) = ok (with_vm s2 vm2) &
+    s2.(evm) =[vrv r] vm2.
+Proof.
+Admitted.
+
+Corollary write_eq wdb gd s1 s2 vm1 r v1 v2:
+  vm_eq s1.(evm) vm1 ->
+  (@eq value) v1 v2 ->
+  write_lval wdb gd r v1 s1 = ok s2 ->
+  exists2 vm2,
+    write_lval wdb gd r v2 (with_vm s1 vm1) = ok (with_vm s2 vm2) &
+    s2.(evm) =1 vm2.
+Proof.
+Admitted.
+
+Lemma writes_eq_on wdb gd s1 s2 vm1 r v1 v2:
+  s1.(evm) =[read_rvs r] vm1 ->
+  List.Forall2 (@eq value) v1 v2 ->
+  write_lvals wdb gd s1 r v1 = ok s2 ->
+  exists2 vm2,
+    write_lvals wdb gd (with_vm s1 vm1) r v2 = ok (with_vm s2 vm2) &
+    s2.(evm) =[vrvs r] vm2.
+Proof.
+Admitted.
+
+Corollary writes_eq wdb gd s1 s2 vm1 r v1 v2:
+  vm_eq s1.(evm) vm1 ->
+  List.Forall2 (@eq value) v1 v2 ->
+  write_lvals wdb gd s1 r v1 = ok s2 ->
+  exists2 vm2,
+    write_lvals wdb gd (with_vm s1 vm1) r v2 = ok (with_vm s2 vm2) &
+    vm_eq s2.(evm) vm2.
+Proof.
+Admitted.
+
+(* ---------- uincl ---------- *)
+
 Lemma sem_pexpr_uincl_on_pair wdb gd :
   (∀ e s1 vm2 v1,
       s1.(evm) <=[read_e e] vm2 →
@@ -1739,8 +1870,23 @@ Proof.
   + apply: uincl_onI hle'; SvD.fsetdec.
   have /= [vj' -> huvj /=] := hb _ _ _ hle1 hbj.
   have -> /= := vuincl_sem_sop2 huiv huvj hop2.
-  apply: hrec (value_uincl_refl acc) hf.
-Qed.
+  exact: hrec (value_uincl_refl acc) hf.
+  + (* Case: is_var_init *)
+    move=> vi s1 vm2 v1. move=> evm []ok.
+    rewrite /uincl_on /vm_rel in evm.
+    specialize (evm vi).
+    rewrite <- SvP.MP.singleton_equal_add in evm.
+    pose proof SvD.MSetDecideTestCases.test_In_singleton vi.
+    apply evm in H. clear evm.
+    exists (is_defined vm2.[vi]). reflexivity.
+    subst.
+    rewrite /value_uincl in H.
+    rewrite /is_defined.
+    Print value_uincl.
+    Print subtype.
+    case (evm s1).[vi];case vm2.[vi] => //=.
+    (* Not true because VM1 may be more defined than VM2. *)
+Admitted.
 
 Lemma sem_pexpr_uincl_on wdb gd s1 vm2 e v1 :
   s1.(evm) <=[read_e e] vm2 →
@@ -2047,6 +2193,9 @@ Proof.
   move=> ?? /hst -> /= -> ?? /hl -> /= -> acc /hi -> /=.
   elim: ziota acc => //= j js hrec acc; t_xrbindP.
   by move=> ?? /write_var_wdb -> /= ? /hb -> /= -> /= /hrec.
+  + move => > he1 > he2 >; apply on_arr_varP => > eq /get_var_wdb -> /=.
+    by t_xrbindP => > /he1 -> re1 > /he2 -> re2 /=; rewrite re2 re1 => <-.
+  + by t_xrbindP => > he1 > he2 > /he1 -> /= -> > /he2 -> /= -> <-.
 Qed.
 
 Lemma sem_pexpr_wdb s e v : sem_pexpr true gd s e = ok v -> sem_pexpr wdb gd s e = ok v.
@@ -2711,7 +2860,7 @@ Lemma eq_exprP_pair wdb gd :
 Proof.
   apply: pexprs_ind_pair; split =>
     [| e he es hes |?|?|?|?|????? He|????? He|???? He|?? He|?? He1 ? He2|?? hes|?? He ? He1 ? He2 |
-      ? hi ??? hb ? hs ? hl] s [] //=.
+      ? hi ??? hb ? hs ? hl | ? | ?? He1 ? He2 | ? He1 ? He2] s [] //=.
   - by move => e' es' /andP[] /he -> /hes ->.
   1-3: by move => ? /eqP ->.
   - exact: eq_gvarP.
@@ -2725,6 +2874,9 @@ Proof.
   do 3! apply bind_eq => // >.
   apply foldM_ext => ??; apply bind_eq; first by rewrite /write_var hv.
   by move=> ?; rewrite hb.
+  - by move=> ? /eqP ->.
+  - by move=> vi p1 p2 /andP[/andP[/eqP -> /He1 ->] /He2 ->].
+  - by move=> p1 p2 /andP[/He1 -> /He2 ->].
 Qed.
 
 Lemma eq_exprP wdb gd s e1 e2 : eq_expr e1 e2 -> sem_pexpr wdb gd s e1 = sem_pexpr wdb gd s e2.
