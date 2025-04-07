@@ -12,9 +12,6 @@ Unset Printing Implicit Defensive.
 
 Local Open Scope Z_scope.
 
-
-
-
 Section SourceSysCall.
 
 Context {abst: Tabstract}.
@@ -22,6 +19,9 @@ Context
   {pd: PointerData}
   {syscall_state : Type}
   {sc_sem : syscall_sem syscall_state} .
+  
+Lemma forall2_eq: forall (vs vs': values), (List.Forall2 eq vs vs') -> vs=vs'.
+Proof. move=> vs vs' H; induction H; by try f_equal. Qed.
 
 Definition exec_getrandom_u (scs : syscall_state) len vs :=
   Let _ :=
@@ -58,6 +58,17 @@ Proof.
   case: hu => // va va' ?? /of_value_uincl_te h [] //.
   t_xrbindP => a /h{h}[? /= -> ?] ra hra ??; subst rscs vres.
   by rewrite hra /=; eexists; eauto.
+Qed.
+
+Lemma exec_syscallPu_safety scs m o vargs vargs' rscs rm vres :
+exec_syscall_u scs m o vargs = ok (rscs, rm, vres) →
+List.Forall2 (@eq value) vargs vargs' →
+exists2 vres' : values,
+  exec_syscall_u scs m o vargs' = ok (rscs, rm, vres') & List.Forall2 (@eq value) vres vres'.
+Proof.
+  move => hsys heq. exists vres.
+  by apply forall2_eq in heq; subst.
+  by apply List_Forall2_refl.
 Qed.
 
 Definition mem_equiv m1 m2 := stack_stable m1 m2 /\ validw m1 =3 validw m2.
@@ -124,6 +135,17 @@ Lemma exec_syscallPs scs m o vargs vargs' rscs rm vres :
 Proof.
   move=> h1 h2; rewrite (exec_syscallPs_eq h1 h2).
   by exists vres=> //; apply List_Forall2_refl.
+Qed.
+
+Lemma exec_syscallPs_safety scs m o vargs vargs' rscs rm vres :
+  exec_syscall_s scs m o vargs = ok (rscs, rm, vres) →
+  List.Forall2 (@eq value) vargs vargs' →
+  exists2 vres' : values,
+    exec_syscall_s scs m o vargs' = ok (rscs, rm, vres') & List.Forall2 (@eq value) vres vres'.
+Proof.
+  move => hsys heq. exists vres.
+  by apply forall2_eq in heq; subst.
+  by apply List_Forall2_refl.
 Qed.
 
 Lemma sem_syscall_equiv o scs m : 

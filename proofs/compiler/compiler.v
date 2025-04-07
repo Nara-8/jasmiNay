@@ -21,7 +21,7 @@ Require Import
   constant_prop
   dead_calls
   lower_spill
-  dead_code
+  dead_code_safety
   inline
   linearization
   lowering
@@ -56,7 +56,7 @@ Context
 
 Let postprocess (cl: bool) (p: uprog) : cexec uprog :=
   let p := const_prop_prog cl p in
-  dead_code_prog is_move_op p false.
+  dead_code_prog p false.
 
 (* FIXME: error really not clear for the user *)
 (* TODO: command line option to specify the unrolling depth,
@@ -234,7 +234,7 @@ Definition live_range_splitting (p: uprog) : cexec uprog :=
   let pv := cparams.(print_uprog) RemovePhiNodes pv in
   let pv := map_prog_name (refresh_instr_info cparams) pv in
   Let _ := check_uprog (wsw:= withsubword) p.(p_extra) p.(p_funcs) pv.(p_extra) pv.(p_funcs) in
-  Let pv := dead_code_prog (ap_is_move_op aparams) pv false in
+  Let pv := dead_code_prog pv false in
   let p := cparams.(print_uprog) DeadCode_Renaming pv in
   ok p.
 
@@ -265,7 +265,7 @@ Definition compiler_first_part (to_keep: seq funname) (p: prog) : cexec uprog :=
 
   Let p := inlining to_keep p in
 
-  Let p := unroll_loop (ap_is_move_op aparams) false p in
+  Let p := unroll_loop false p in
   let p := cparams.(print_uprog) Unrolling p in
 
   Let p := dead_calls_err_seq to_keep p in
@@ -322,14 +322,14 @@ Definition compiler_third_part (returned_params: funname -> option (seq (option 
     | None => rminfo fn
     end
   in
-  Let pr := dead_code_prog_tokeep (ap_is_move_op aparams) false rminfo ps in
+  Let pr := dead_code_prog_tokeep rminfo ps in
   let pr := cparams.(print_sprog) RemoveReturn pr in
 
   let pa := {| p_funcs := cparams.(regalloc) pr.(p_funcs) ; p_globs := pr.(p_globs) ; p_extra := pr.(p_extra) |} in
   let pa : sprog := cparams.(print_sprog) RegAllocation pa in
   Let _ := check_sprog (wsw:= withsubword) pr.(p_extra) pr.(p_funcs) pa.(p_extra) pa.(p_funcs) in
 
-  Let pd := dead_code_prog (ap_is_move_op aparams) pa true in
+  Let pd := dead_code_prog pa true in
   let pd := cparams.(print_sprog) DeadCode_RegAllocation pd in
 
   ok pd.
