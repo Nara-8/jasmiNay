@@ -1006,7 +1006,7 @@ module Exp = struct
       let e2 = toec_expr env e2 in
        Eapp (ec_ident "is_init",[ec_vari env (L.unloc x); e1;e2] )
     | Pis_mem_init (e1,e2) -> 
-      let e1 = toec_expr env e1 in
+      let e1 = Eapp (pd_uint env, [toec_expr env e1]) in
       let e2 = toec_expr env e2 in
       Eapp (ec_ident "is_valid", [e1; e2])
 end
@@ -1988,7 +1988,7 @@ and toec_instr asmOp env i =
     | Cassert (k,_,e) ->
       begin
         match env.model with
-        | Annotations ->  Annotations.ec_trace env k e
+        | Annotations -> Annotations.ec_trace env k e
         | _ -> []
       end
 
