@@ -657,7 +657,7 @@ Lemma dead_code_tokeep_callPs (p p': sprog) onfun fn wrip scs mem scs' mem' va v
    sem_call p' wrip scs mem fn va scs' mem' vr' tr /\ List.Forall2 (@eq value) (fn_keep_only onfun fn vr) vr'.
 Proof. by move=> hd hall;apply: (dead_code_callP hd); apply List_Forall2_refl. Qed.
 
-(*NEEDS DO_NOP? *)
+(* Question: Needs do_nop? *)
 Lemma dead_code_callPu (p p': uprog) do_nop fn ev scs mem scs' mem' va va' vr tr:
   dead_code_prog p do_nop = ok p' ->
   List.Forall2 (@eq value) va va' ->
@@ -666,6 +666,7 @@ Lemma dead_code_callPu (p p': uprog) do_nop fn ev scs mem scs' mem' va va' vr tr
    sem_call p' ev scs mem fn va scs' mem' vr' tr /\ List.Forall2 (@eq value) vr vr'.
 Proof. apply dead_code_tokeep_callPu. Qed.
 
+(* Question: Needs do_nop? *)
 Lemma dead_code_callPs (p p': sprog) do_nop fn wrip scs mem scs' mem' va va' vr tr:
   dead_code_prog p do_nop = ok p' ->
   List.Forall2 (@eq value) va va' ->

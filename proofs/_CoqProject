@@ -18,6 +18,13 @@
 -R lang Jasmin
 -R ssrmisc Jasmin
 
+lang/psem.v
+lang/psem_safety.v
+compiler/dead_code_safety.v
+compiler/dead_code_safety_proof.v
+compiler/dead_code.v
+compiler/dead_code_proof.v
+
 ssrmisc/oseq.v
 ssrmisc/seq_extra.v
 3rdparty/ssrring.v
@@ -67,7 +74,7 @@ compiler/constant_prop_proof.v
 compiler/dead_calls.v
 compiler/dead_calls_proof.v
 compiler/dead_code_safety.v
-compiler/dead_code_proof_safety.v
+compiler/dead_code_safety_proof.v
 compiler/dead_code.v
 compiler/dead_code_proof.v
 compiler/direct_call_proof.v
