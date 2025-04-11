@@ -1,6 +1,6 @@
 (* ** Imports and settings *)
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype.
-Require Import psem compiler_util.
+Require Import psem_safety compiler_util.
 Require Export dead_code_safety.
 Import Utf8.
 
@@ -126,14 +126,13 @@ Section PROOF.
 
   Local Lemma Hassgn_aux ii s1 s2 v v' x tag ty e s:
     sem_pexpr true gd s1  e = ok v ->
-    truncate_val ty v = ok v' ->
     write_lval true gd x v' s1 = ok s2 ->
     ∀ vm1',
       (evm s1) =[read_rv_rec (read_e_rec (Sv.diff s (write_i (Cassgn x tag ty e))) e) x]  vm1' →
       ∃ vm2', (evm s2) =[s]  vm2'
         ∧ sem_I p' ev (with_vm s1 vm1') (MkI ii (Cassgn x tag ty e)) (with_vm s2 vm2').
   Proof.
-    move=> Hv Hv' Hw vm1' Hvm.
+    move=> Hv Hw vm1' Hvm.
     rewrite write_i_assgn in Hvm.
     move: Hvm; rewrite read_rvE read_eE=> Hvm.
     rewrite (surj_estate s1) in Hv.
@@ -142,7 +141,7 @@ Section PROOF.
     have [| vm2' Hw2 Hvm2]:= write_lval_eq_on _ Hw Hvm; first by SvD.fsetdec.
     exists vm2'; split; first by apply: eq_onI Hvm2; SvD.fsetdec.
     constructor. apply Eassgn with v'' v' ;rewrite -?eq_globs.
-    rewrite /with_vm /=. apply Hv''. apply Hv'. apply Hw2.
+    by rewrite /with_vm /=. by apply Hw2.
   Qed.
 
   Local Lemma Hwrite_disj wdb s1 s2 s x v:
@@ -174,9 +173,9 @@ Section PROOF.
   
   Local Lemma Hassgn : sem_Ind_assgn p Pi_r.
   Proof.
-    move => [scs1 m1 vm1 ctr1] [scs2 m2 vm2 ctr2] x tag ty e v v' Hv htr Hw ii s /=.
-    case: ifPn=> _ /=; last by apply: Hassgn_aux Hv htr Hw.
-    case: ifPn=> /= [ | _]; last by apply: Hassgn_aux Hv htr Hw.
+    move => [scs1 m1 vm1 ctr1] [scs2 m2 vm2 ctr2] x tag ty e v v' Hv Hw ii s /=.
+    case: ifPn=> _ /=; last by apply: Hassgn_aux Hv Hw.
+    case: ifPn=> /= [ | _]; last by apply: Hassgn_aux Hv Hw.
     rewrite write_i_assgn => /andP [Hdisj Hwmem] vm1' Hvm.
     have /= [ <- Hvm1 <-]:= Hwrite_disj Hw Hdisj Hwmem.
     rewrite /with_vm /=; exists vm1' => /=; subst; split; last by constructor.
@@ -563,7 +562,6 @@ Qed.
     + elim: (fp);first by rewrite read_rvs_nil;SvD.fsetdec.
       by move=> ?? Hrec; rewrite /= read_rvs_cons /=;SvD.fsetdec.
     move=> vs Hv.
-    (*have [vargs1' htra' hv'] := mapM2_dc_truncate_val htra Hv.*)
     have/(_ sv (evm s0)) [|//|/=vm1]:= write_lvals_eq_on _ Hw.
     + by rewrite heq; SvD.fsetdec.
     move=> Hw' Hvm2'2.
@@ -587,7 +585,6 @@ Qed.
       elim: tokeep f_tyout vres vres' => // b tokeep ih [| ty f_tyout] /= [ | v vres] //= vres' => [[<-]//|].
       t_xrbindP => v' hv'; t_xrbindP => vres1 /ih{} ih <-; case:b => //=. by rewrite hv' /= ih.
       apply forall2_eq in Hv. apply forall2_eq in Hvl. subst.
-   (* have [vres2 {Hfull'} Hfull' Hvl'] := mapM2_dc_truncate_val Hfull' Hvl.*)
       eexists (fn_keep_only onfun fn vres'); split=> //=.
     apply:EcallRun.
     + by apply Hf'2. + by apply htra.
