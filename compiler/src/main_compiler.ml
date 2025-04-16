@@ -183,7 +183,8 @@ let main () =
               cbv
       in
       let cprog = Conv.cuprog_of_prog prog in
-      let sc_prog = Safety_cond.sc_prog Arch.reg_size Build_Tabstract Arch.asmOp cprog in
+      let fresh_var_ident vk ii name t = Conv.fresh_var_ident vk ii (Uint63.of_int 0) name t in
+      let sc_prog = Safety_cond.sc_prog Arch.reg_size Build_Tabstract Arch.asmOp fresh_var_ident cprog in
       let rm_init_prog = Remove_is_var_init.rm_var_init_prog_dc Build_Tabstract Arch.asmOp Arch.msf_size Arch.fcp Arch.aparams.ap_is_move_op b sc_prog in
       let (gd, fdso) = Conv.prog_of_cuprog rm_init_prog in
       let restore_ty tyi tyo =
