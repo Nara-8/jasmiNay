@@ -841,6 +841,9 @@ Section REL_EQUIV.
   Lemma vm_uinclT vm2 vm1 vm3 : vm1 <=1 vm2 -> vm2 <=1 vm3 -> vm1 <=1 vm3.
   Proof. rewrite !vm_uincl_vm_rel; apply vm_rel_trans => ???; apply: value_uincl_trans. Qed.
 
+  Lemma vm_eq_refl vm : vm_eq vm vm.
+  Proof. done. Qed.
+
   Lemma eq_on_refl s vm : vm =[s] vm.
   Proof. by apply vm_rel_refl. Qed.
 
@@ -1090,6 +1093,12 @@ Section REL_EQUIV.
     apply: (eq_on_union hs h); apply: set_var_eq_ex; eauto.
   Qed.
 
+  Lemma get_var_eq_at wdb x vm1 vm2 v1 :
+    (@eq value) vm1.[x] vm2.[x] ->
+    get_var wdb vm1 x = ok v1 ->
+    exists2 v2, get_var wdb vm2 x = ok v2 & (@eq value) v1 v2.
+  Proof. rewrite /get_var; t_xrbindP => -> h1 h2. exists v1. by rewrite h1 h2. by[]. Qed.
+
   Lemma get_var_uincl_at wdb x vm1 vm2 v1 :
     (value_uincl vm1.[x] vm2.[x]) ->
     get_var wdb vm1 x = ok v1 ->
@@ -1127,7 +1136,16 @@ Section REL_EQUIV.
   Proof. by move => ?; SvD.fsetdec. Qed.
 
   Hint Resolve eq_on_empty uincl_on_empty : core.
-
+  
+  Lemma eq_on_union_and dom dom' vm1 vm2 :
+   vm1 =[Sv.union dom dom'] vm2 ↔
+   vm1 =[dom] vm2 ∧ vm1 =[dom'] vm2.
+  Proof.
+    split.
+    + by move => h; split => x hx; apply: h; SvD.fsetdec.
+    by case => h h' x /Sv.union_spec[]; [ exact: h | exact: h' ].
+  Qed.
+  
   Lemma uincl_on_union_and dom dom' vm1 vm2 :
    vm1 <=[Sv.union dom dom'] vm2 ↔
    vm1 <=[dom] vm2 ∧ vm1 <=[dom'] vm2.
